@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const API_URL = "http://127.0.0.1:5328/notes";
+
 /**
  * Represents a note with an id, title, and content.
  */
@@ -22,26 +24,39 @@ export default function Notes() {
   const [apiData, setApiData] = useState<Note[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  /**
+   * Fetches data from the API and updates the component state.
+   */
+  async function fetchData() {
+    try {
+      setIsLoading(true);
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setApiData(data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    /**
-     * Fetches data from the API and updates the component state.
-     */
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        const response = await fetch("http://127.0.0.1:5328/notes");
-        const data = await response.json();
-        setApiData(data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (message) {
+      setTimeout(() => {
+        setMessage(null);
+        setNote(null);
+
+        // After 3 seconds, refetch the data
+        fetchData();
+      }, 3000);
+    }
+  }, [message, note]);
 
   /**
    * Creates a new note by sending a POST request to the API.
@@ -50,10 +65,11 @@ export default function Notes() {
     try {
       if (!note || !note.title || !note.content) {
         console.error("Note title and content are required.");
+        setMessage("Note title and content are required.");
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:5328/notes", {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,6 +77,10 @@ export default function Notes() {
         body: JSON.stringify(note),
       });
       const data = await response.json();
+      setMessage(
+        data ? "Note created successfully!" : "Failed to create note."
+      );
+      setNote({ id: 0, title: "", content: "" }); // Reset the form
       setApiData([...(apiData || []), data]);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -72,7 +92,7 @@ export default function Notes() {
    */
   async function updateNote(id: number) {
     try {
-      const response = await fetch(`http://127.0.0.1:5328/notes/${id}`, {
+      const response = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +100,11 @@ export default function Notes() {
         body: JSON.stringify(note),
       });
       const data = await response.json();
-      setApiData(apiData?.map(note => (note.id === id ? data : note)) || []);
+      setMessage(data.result);
+      setApiData(
+        apiData?.map(note => (note.id === id ? { ...note, ...note } : note)) ||
+          []
+      );
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -91,10 +115,11 @@ export default function Notes() {
    */
   async function deleteNote(id: number) {
     try {
-      const response = await fetch(`http://127.0.0.1:5328/notes/${id}`, {
+      const response = await fetch(`${API_URL}/${id}`, {
         method: "DELETE",
       });
       const data = await response.json();
+      setMessage(data.result);
       setApiData(apiData?.filter(note => note.id !== id) || []);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -106,9 +131,9 @@ export default function Notes() {
   }
 
   return (
-    <div className="flex flex-col w-screen items-center justify-center p-4">
+    <div className="flex flex-col w-screen items-center justify-center p-2 md:p-4">
       <h2 className="mb-4 text-xl font-bold">Add a New Note</h2>
-      <div className="flex flex-col gap-4 w-full max-w-md">
+      <div className="flex flex-col gap-4 w-full max-w-md text-sm md:text-base">
         <input
           className="border border-gray-300 rounded-md p-2 bg-gray-100 text-gray-900"
           type="text"
@@ -147,12 +172,15 @@ export default function Notes() {
           onClick={() => setNote({ id: 0, title: "", content: "" })}>
           Clear
         </button>
+        <div className="flex justify-center items-center text-green-500 font-bold h-10">
+          {message && <span>{message}</span>}
+        </div>
       </div>
-      <div className="flex flex-col w-screen items-center justify-center p-4">
-        <h2 className="mb-4 mt-12 text-xl font-bold">Notes</h2>
-        <div className="my-12 w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg shadow">
+      <div className="flex flex-col w-screen items-center justify-center p-2 md:p-4">
+        <h2 className="mt-12 text-xl font-bold">Notes</h2>
+        <div className="my-4 w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg shadow">
           {apiData ? (
-            <div className="flex flex-col p-4 gap-4 w-full">
+            <div className="flex flex-col p-2 md:p-4 gap-4 w-full text-sm md:text-base">
               <div className="flex justify-between items-center border-b border-gray-700 pb-2 gap-2">
                 <div className="flex flex-wrap text-gray-400">
                   <p className="font-bold mx-2">ID</p>
@@ -163,7 +191,7 @@ export default function Notes() {
               {apiData.map((item: Note) => (
                 <div
                   key={item.id}
-                  className="flex justify-between items-center border-b border-gray-700 py-4 gap-2">
+                  className="flex justify-between items-center border-b border-gray-700 py-2 md:py-4 gap-2">
                   <div className="flex flex-wrap">
                     <p className="font-semibold mx-2 text-gray-400">
                       {item.id}
@@ -174,15 +202,32 @@ export default function Notes() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded"
+                      className="bg-green-500 hover:bg-green-700 text-white font-bold p-2 rounded"
                       onClick={() => setNote(item)}>
-                      Edit
+                      {/* Edit */}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="w-5 h-5">
+                        <path d="M3 17.25V21h3.75l11.14-11.14-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.42 1.42 3.75 3.75 1.42-1.42z" />
+                      </svg>
                     </button>
                     <button
                       type="button"
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
+                      className="bg-red-500 hover:bg-red-700 text-white p-2 rounded"
                       onClick={() => deleteNote(item.id)}>
-                      Delete
+                      {/* Delete */}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="w-5 h-5">
+                        <path
+                          fillRule="evenodd"
+                          d="M6 2a1 1 0 0 0-1 1v1H4a2 2 0 0 0-2 2v1h16V5a2 2 0 0 0-2-2h-1V3a1 1 0 0 0-1-1H6zm0 2h12v1H6V4zm0 3h12v1H6V7zm0 3h12v1H6v-1zm0 3h12v1H6v-1zm0 3h12v1H6v-1z"
+                        />
+                      </svg>
                     </button>
                   </div>
                 </div>
