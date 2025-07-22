@@ -64,8 +64,8 @@ export default function Notes() {
   async function createNote() {
     try {
       if (!note || !note.title || !note.content) {
-        console.error("Note title and content are required.");
-        setMessage("Note title and content are required.");
+        console.error("Error: Note title and content are required.");
+        setMessage("Error: Note title and content are required.");
         return;
       }
 
@@ -78,12 +78,13 @@ export default function Notes() {
       });
       const data = await response.json();
       setMessage(
-        data ? "Note created successfully!" : "Failed to create note."
+        data ? "Note created successfully!" : "Error: Failed to create note."
       );
       setNote({ id: 0, title: "", content: "" }); // Reset the form
       setApiData([...(apiData || []), data]);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error creating note:", error);
+      setMessage("Error: Failed to create note.");
     }
   }
 
@@ -106,7 +107,8 @@ export default function Notes() {
           []
       );
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error updating note:", error);
+      setMessage("Error: Failed to update note.");
     }
   }
 
@@ -122,7 +124,8 @@ export default function Notes() {
       setMessage(data.result);
       setApiData(apiData?.filter(note => note.id !== id) || []);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error deleting note:", error);
+      setMessage("Error: Failed to delete note.");
     }
   }
 
@@ -172,8 +175,13 @@ export default function Notes() {
           onClick={() => setNote({ id: 0, title: "", content: "" })}>
           Clear
         </button>
-        <div className="flex justify-center items-center text-green-500 font-bold h-10">
-          {message && <span>{message}</span>}
+        <div className="flex justify-center items-center font-bold h-10">
+          {message &&
+            (message.startsWith("Error:") ? (
+              <span className="text-red-500">{message}</span>
+            ) : (
+              <span className="text-green-500">{message}</span>
+            ))}
         </div>
       </div>
       <div className="flex flex-col w-screen items-center justify-center p-2 md:p-4">
