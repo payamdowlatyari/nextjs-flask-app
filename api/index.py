@@ -255,6 +255,18 @@ def delete_note(note_id):
     return jsonify({'error': 'Note not found'}), 404
 
 def handler(environ, start_response):
+    """
+    WSGI handler for the application.
+
+    Calls the app with the environ and start_response arguments.
+
+    Parameters:
+        environ (dict): The WSGI environment.
+        start_response (function): The WSGI start response function.
+
+    Returns:
+        The response from the app.
+    """
     return app(environ, start_response)
 
 
