@@ -20,7 +20,7 @@ class Note(db.Model):
 with app.app_context():
     db.create_all()
 
-@app.route('/notes', methods=['POST'])
+@app.route('/api/notes', methods=['POST'])
 def add_note():
     """
     Creates a new note.
@@ -72,7 +72,7 @@ def add_note():
     db.session.commit()
     return jsonify({'id': note.id, 'title': note.title, 'content': note.content}), 201
 
-@app.route('/notes', methods=['GET'])
+@app.route('/api/notes', methods=['GET'])
 def list_notes():
     """
     Lists all notes.
@@ -104,7 +104,7 @@ def list_notes():
     result = [{'id': n.id, 'title': n.title, 'content': n.content} for n in notes]
     return jsonify(result)
 
-@app.route('/notes/<int:note_id>', methods=['GET'])
+@app.route('/api/notes/<int:note_id>', methods=['GET'])
 def get_note(note_id):
     """
     Gets a note by its ID.
@@ -151,8 +151,8 @@ def get_note(note_id):
     if note is None:
         return jsonify({'error': 'Note not found'}), 404
     return jsonify({'id': note.id, 'title': note.title, 'content': note.content})
-    
-@app.route('/notes/<int:note_id>', methods=['PUT'])
+
+@app.route('/api/notes/<int:note_id>', methods=['PUT'])
 def update_note(note_id):
     """
     Updates a note by its ID.
@@ -210,7 +210,7 @@ def update_note(note_id):
     db.session.commit()
     return jsonify({'result': 'Updated'})
 
-@app.route('/notes/<int:note_id>', methods=['DELETE'])
+@app.route('/api/notes/<int:note_id>', methods=['DELETE'])
 def delete_note(note_id):
     """
     Deletes a note by its ID.

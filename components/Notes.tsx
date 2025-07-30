@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 
 const API_URL =
   process.env.NODE_ENV === "development"
-    ? `${process.env.NEXT_PUBLIC_API_URL}/notes`
-    : "/notes";
+    ? `${process.env.NEXT_PUBLIC_API_URL}/api/notes`
+    : "/api/notes";
 
 /**
  * Represents a note with an id, title, and content.
